@@ -58,18 +58,38 @@ main {
   align-self: start;
 }
 #view { width: 100%; height: auto; display: block; }
+#hud {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--line);
+}
 #banner {
-  position: absolute;
-  left: 14px;
-  top: 12px;
+  grid-column: 1;
+  justify-self: start;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(29, 29, 34, 0.82);
+  background: rgba(29, 29, 34, 0.86);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   display: none;
 }
+#lights { grid-column: 2; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; background: #1d1d22; }
+#lights i { width: 20px; height: 20px; border-radius: 50%; background: #3a3a40; }
+#lights i.on { background: #ff1e1e; }
+#lights b { display: none; color: #31d158; font-size: 22px; font-style: italic; font-weight: 900; padding: 0 22px; }
+#lights.go i { display: none; }
+#lights.go b { display: block; }
+#clock { grid-column: 3; justify-self: end; display: grid; grid-template-columns: auto auto auto; align-items: baseline; column-gap: 8px; padding: 6px 14px 8px; border-radius: 10px; background: #1d1d22; color: #fff; }
+#clock #clockLabel { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: rgba(255,255,255,0.7); }
+#clock #clockValue { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+#clock #clockMax { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.55); }
+#clockBar { grid-column: 1 / -1; height: 4px; margin-top: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); overflow: hidden; }
+#clockBar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--red), var(--pink)); }
 aside { display: flex; flex-direction: column; gap: 12px; }
 .pane { display: flex; flex-direction: column; gap: 12px; }
 .hidden { display: none !important; }
