@@ -154,33 +154,6 @@
     ctx.restore();
   }
 
-  // Five start lights, then "GO".
-  function drawLights(ctx, countdown, total) {
-    const lit = Math.min(5, Math.floor(((total - countdown) / total) * 6));
-    ctx.save();
-    ctx.fillStyle = 'rgba(29,29,34,0.85)';
-    ctx.fillRect(800 - 160, 40, 320, 70);
-    for (let i = 0; i < 5; i++) {
-      ctx.fillStyle = i < lit ? '#ff1e1e' : '#3a3a40';
-      ctx.beginPath();
-      ctx.arc(800 - 120 + i * 60, 75, 18, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  function drawGo(ctx) {
-    ctx.save();
-    ctx.fillStyle = 'rgba(29,29,34,0.85)';
-    ctx.fillRect(800 - 160, 40, 320, 70);
-    ctx.fillStyle = '#31d158';
-    ctx.font = '900 italic 44px "Segoe UI", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('GO!', 800, 77);
-    ctx.restore();
-  }
-
   function drawCone(ctx, x, y) {
     const r = F1.OBSTACLE_R;
     ctx.save();
@@ -300,35 +273,6 @@
     ctx.restore();
   }
 
-  // Training clock on the track: generation number, time into the generation, and a progress bar.
-  function drawTimer(ctx, gen, t, max) {
-    const x = 22;
-    const y = 22;
-    ctx.save();
-    ctx.scale(1.5, 1.5); // the canvas is shown scaled down, so draw this big enough to read from a distance
-    ctx.fillStyle = 'rgba(29,29,34,0.85)';
-    ctx.beginPath();
-    ctx.roundRect(x, y, 300, 74, 14);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.textBaseline = 'alphabetic';
-    ctx.font = '700 15px "Segoe UI", sans-serif';
-    ctx.fillText('GENERATION ' + gen, x + 18, y + 26);
-    ctx.font = '800 28px "Segoe UI", sans-serif';
-    ctx.fillText(t.toFixed(1) + 's', x + 18, y + 56);
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '600 15px "Segoe UI", sans-serif';
-    ctx.fillText('/ ' + max + 's', x + 108, y + 56);
-    ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    ctx.fillRect(x + 18, y + 64, 264, 4);
-    const g = ctx.createLinearGradient(x + 18, 0, x + 282, 0);
-    g.addColorStop(0, '#e10600');
-    g.addColorStop(1, '#c4126b');
-    ctx.fillStyle = g;
-    ctx.fillRect(x + 18, y + 64, 264 * Math.min(1, t / max), 4);
-    ctx.restore();
-  }
-
   function drawChart(canvas, series) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
@@ -372,9 +316,6 @@
     drawLabel: drawLabel,
     drawBadge: drawBadge,
     drawSensors: drawSensors,
-    drawLights: drawLights,
-    drawGo: drawGo,
-    drawTimer: drawTimer,
     drawCone: drawCone,
     drawEditor: drawEditor,
     drawChart: drawChart,

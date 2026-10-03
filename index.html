@@ -19,8 +19,15 @@
 </header>
 <main>
   <div class="stage">
+    <div id="hud">
+      <div id="banner"></div>
+      <div id="lights" class="hidden"><i></i><i></i><i></i><i></i><i></i><b id="go">GO!</b></div>
+      <div id="clock" class="hidden">
+        <span id="clockLabel"></span><b id="clockValue"></b><span id="clockMax"></span>
+        <div id="clockBar"><i></i></div>
+      </div>
+    </div>
     <canvas id="view" width="1600" height="1000"></canvas>
-    <div id="banner"></div>
   </div>
   <aside>
     <div class="pane" id="pane-train">

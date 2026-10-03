@@ -128,7 +128,6 @@
       if ($('tgLabels').checked) R.drawLabel(ctx, lead.x, lead.y, lead.meta.team.name, '#1d1d22');
       if ($('tgSensors').checked) R.drawSensors(ctx, lead);
     }
-    R.drawTimer(ctx, training.gen, training.heat.tick * F1.DT, training.seconds);
   }
 
   function trainFrame() {
@@ -140,6 +139,8 @@
       for (let i = 0; i < steps; i++) training.step();
     }
     if (frameNo % 6 === 0) updateTrainHud();
+    setClock('GENERATION ' + training.gen, (training.heat.tick * F1.DT).toFixed(1) + 's', '/ ' + training.seconds + 's', training.heat.tick / training.heat.maxTicks);
+    setLights(-1);
     drawTrain();
   }
 
@@ -169,10 +170,32 @@
     updateBoard();
   }
 
+  // The bar above the map holds the banner, start lights and clock, so nothing covers the track.
   function showBanner(text) {
     const b = $('banner');
     b.textContent = text;
-    b.style.display = text ? 'block' : 'none';
+    b.style.display = text ? 'inline-block' : 'none';
+  }
+
+  function setClock(label, value, max, frac) {
+    $('clock').classList.remove('hidden');
+    $('clockLabel').textContent = label;
+    $('clockValue').textContent = value;
+    $('clockMax').textContent = max;
+    $('clockBar').style.visibility = frac == null ? 'hidden' : 'visible';
+    $('clockBar').firstElementChild.style.width = frac == null ? '0' : Math.round(Math.min(1, frac) * 100) + '%';
+  }
+
+  function hideClock() {
+    $('clock').classList.add('hidden');
+  }
+
+  // lit: 0-5 red lights, 6 = GO!, -1 = hidden
+  function setLights(lit) {
+    const el = $('lights');
+    el.classList.toggle('hidden', lit < 0);
+    el.classList.toggle('go', lit === 6);
+    Array.from(el.querySelectorAll('i')).forEach((light, i) => light.classList.toggle('on', i < lit));
   }
 
   const dot = (t) => '<i style="background:' + t.color + '"></i>';
@@ -229,14 +252,6 @@
         R.drawGhost(ctx, tr[k], tr[k + 1], tr[k + 2], c.meta.team.color);
         if ($('tgLabels').checked) R.drawLabel(ctx, tr[k], tr[k + 1] - (i % 4) * 13, c.meta.label, '#1d1d22');
       });
-      ctx.save();
-      ctx.fillStyle = 'rgba(29,29,34,0.85)';
-      ctx.fillRect(1340, 20, 240, 44);
-      ctx.fillStyle = '#fff';
-      ctx.font = '700 22px "Segoe UI", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Lap ' + fmt(Math.floor(t)), 1460, 51);
-      ctx.restore();
       return;
     }
 
@@ -247,8 +262,20 @@
     if ($('tgLabels').checked) order.forEach((c, i) => R.drawLabel(ctx, c.x, c.y - (i % 3) * 13, c.meta.label, '#1d1d22'));
     if ($('tgTop3').checked) order.slice(0, 3).forEach((c, i) => R.drawBadge(ctx, c.x, c.y, i + 1));
     if ($('tgSensors').checked) R.drawSensors(ctx, me || order[0]);
-    if (race.countdown > 0) R.drawLights(ctx, race.countdown, 240);
-    else if (race.tick < 50) R.drawGo(ctx);
+  }
+
+  function updateRaceHud() {
+    if (!race) {
+      hideClock();
+      setLights(-1);
+    } else if (replay) {
+      setClock('BEST-LAP REPLAY', fmt(Math.floor(Math.min(replay.t, replay.len - 1))), '', null);
+      setLights(-1);
+    } else {
+      setClock('RACE', fmt(race.tick), '', null);
+      if (race.countdown > 0) setLights(Math.min(5, Math.floor(((240 - race.countdown) / 240) * 6)));
+      else setLights(race.tick < 50 ? 6 : -1);
+    }
   }
 
   function raceFrame() {
@@ -262,6 +289,7 @@
       replay.t += 1;
       if (replay.t > replay.len + 90) replay.t = 0;
     }
+    updateRaceHud();
     drawRace();
   }
 
@@ -295,7 +323,11 @@
     frameNo++;
     if (mode === 'train') trainFrame();
     else if (mode === 'race') raceFrame();
-    else R.drawEditor(ctx, editor);
+    else {
+      hideClock();
+      setLights(-1);
+      R.drawEditor(ctx, editor);
+    }
     requestAnimationFrame(frame);
   }
 
