@@ -17,6 +17,8 @@
   let raceOver = false;
   let replay = null;
   let frameNo = 0;
+  let elapsedMs = 0; // wall-clock training time; paused time and other tabs don't count
+  let lastTs = performance.now();
   const keys = { w: false, a: false, s: false, d: false };
 
   const fmt = (ticks) => {
@@ -29,6 +31,7 @@
   // ------------------------------------------------------------------ training tab
   function resetTraining() {
     training = new F1.Training(track, { size: 40, seed: 7 });
+    elapsedMs = 0;
     updateTrainHud();
   }
 
@@ -51,6 +54,9 @@
     $('alive').textContent = alive + ' / ' + cars.length;
     $('bestDist').textContent = Math.round(lead.dist);
     $('bestLap').textContent = lapText(Math.min(...cars.map((c) => c.bestLap), ...training.teams.map((t) => training.history[t.id].bestLap)));
+    $('genClock').textContent = (training.heat.tick * F1.DT).toFixed(1) + ' / ' + training.seconds + 's';
+    const sec = Math.floor(elapsedMs / 1000);
+    $('elapsed').textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
     $('leader').textContent = lead.meta.team.name;
     $('leader').style.color = lead.meta.team.color === '#c3c8ce' ? '#1d1d22' : lead.meta.team.color;
     for (const t of F1.TEAMS) {
@@ -84,9 +90,13 @@
       if ($('tgLabels').checked) R.drawLabel(ctx, lead.x, lead.y, lead.meta.team.name, '#1d1d22');
       if ($('tgSensors').checked) R.drawSensors(ctx, lead);
     }
+    R.drawTimer(ctx, training.gen, training.heat.tick * F1.DT, training.seconds);
   }
 
   function trainFrame() {
+    const now = performance.now();
+    if (!paused) elapsedMs += Math.min(now - lastTs, 250); // cap so a background tab doesn't add minutes
+    lastTs = now;
     if (!paused) {
       const steps = Number($('speed').value);
       for (let i = 0; i < steps; i++) training.step();
