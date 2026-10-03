@@ -53,7 +53,7 @@
     replay = null;
     keys.w = keys.a = keys.s = keys.d = false;
     showBanner('');
-    $('resultsSec').classList.add('hidden');
+    $('replayBtn').classList.add('hidden');
     $('boardTitle').textContent = 'Leaderboard';
     $('source').querySelector('option[value=pre]').disabled = !pre;
     $('source').value = pre ? 'pre' : 'live';
@@ -76,7 +76,7 @@
   function buildTeamList() {
     $('teamList').innerHTML = F1.TEAMS.map(
       (t) =>
-        '<div class="team"><i style="background:' + t.color + '"></i><b>' + t.name + '</b><em id="tm-' + t.id + '">-</em><small>' + t.algo + '</small></div>'
+        '<div class="team" title="' + t.algo + '"><i style="background:' + t.color + '"></i><b>' + t.name + '</b><em id="tm-' + t.id + '">-</em><small>' + t.algo + '</small></div>'
     ).join('');
   }
 
@@ -163,7 +163,7 @@
     race = new F1.Race(track, lineup, Number($('laps').value));
     raceOver = false;
     replay = null;
-    $('resultsSec').classList.add('hidden');
+    $('replayBtn').classList.add('hidden');
     $('boardTitle').textContent = 'Leaderboard';
     $('hint').textContent = driving ? 'W accelerate, S brake, A/D steer. Leaving the track costs 3 seconds.' : 'Spectating.';
     showBanner(driving ? 'WASD or arrow keys to drive' : 'Race in progress');
@@ -213,9 +213,10 @@
         if (c.finished) info = i === 0 ? fmt(c.finishTick) : '+' + ((c.finishTick - winner.finishTick) / 60).toFixed(1) + 's';
         else if (race.done) info = '+' + (race.laps - c.laps) + (race.laps - c.laps === 1 ? ' lap' : ' laps');
         else info = 'L' + Math.min(race.laps, c.laps + 1) + '/' + race.laps + (c.violations ? ' !' + c.violations : '');
-        return '<div class="lb' + (c.meta.isPlayer ? ' me' : '') + '"><span class="pos">' + (i + 1) + '</span>' + dot(c.meta.team) + '<b>' + c.meta.label + '</b><em>' + info + '</em></div>';
+        return '<div class="lb' + (c.meta.isPlayer ? ' me' : '') + '"><span class="pos">' + (i + 1) + '</span>' + dot(c.meta.team) + '<b>' + c.meta.label + '</b><em>' + info + '</em><em class="best">' + lapText(c.bestLap) + '</em></div>';
       })
       .join('');
+    $('board').insertAdjacentHTML('afterbegin', '<div class="lb head"><span></span><i></i><b>Car</b><em>Race</em><em class="best">Best lap</em></div>');
   }
 
   function endRace() {
@@ -223,11 +224,7 @@
     keys.w = keys.a = keys.s = keys.d = false;
     updateBoard();
     $('boardTitle').textContent = 'Final classification';
-    const timed = race.cars.filter((c) => c.bestTrace).sort((a, b) => a.bestLap - b.bestLap);
-    $('results').innerHTML = timed
-      .map((c, i) => '<div class="lb' + (c.meta.isPlayer ? ' me' : '') + '"><span class="pos">' + (i + 1) + '</span>' + dot(c.meta.team) + '<b>' + c.meta.label + '</b><em>' + fmt(c.bestLap) + '</em></div>')
-      .join('');
-    $('resultsSec').classList.remove('hidden');
+    $('replayBtn').classList.remove('hidden');
     startReplay();
     const me = race.cars.find((c) => c.meta.isPlayer);
     showBanner(me ? 'Finished P' + (race.standings().indexOf(me) + 1) + '. Best laps replaying as ghosts.' : 'Race complete. Best laps replaying as ghosts.');
@@ -319,6 +316,16 @@
   const editor = F1.createEditor($('view'), updateEditorUi);
 
   // ------------------------------------------------------------------ wiring
+  // Size the map to the space the layout gives it, keeping the 1600x1000 aspect, so no page scroll is needed.
+  function fitMap() {
+    const wrap = $('mapwrap');
+    const scale = Math.min(wrap.clientWidth / 1600, wrap.clientHeight / 1000);
+    if (!(scale > 0)) return;
+    $('view').style.width = Math.floor(1600 * scale) + 'px';
+    $('view').style.height = Math.floor(1000 * scale) + 'px';
+  }
+  new ResizeObserver(fitMap).observe($('mapwrap'));
+
   function frame() {
     frameNo++;
     if (mode === 'train') trainFrame();
