@@ -27,7 +27,7 @@
         <div id="clockBar"><i></i></div>
       </div>
     </div>
-    <canvas id="view" width="1600" height="1000"></canvas>
+    <div id="mapwrap"><canvas id="view" width="1600" height="1000"></canvas></div>
   </div>
   <aside>
     <div class="pane" id="pane-train">
@@ -38,8 +38,8 @@
           <div><span>Best distance</span><b id="bestDist">0</b></div>
           <div><span>Best lap</span><b id="bestLap">-</b></div>
           <div><span>Leading team</span><b id="leader">-</b></div>
-          <div><span>Generation clock</span><b id="genClock">0.0 / 45s</b></div>
-          <div><span>Training elapsed</span><b id="elapsed">0:00</b></div>
+          <div><span>Gen clock</span><b id="genClock">0.0 / 45s</b></div>
+          <div><span>Elapsed</span><b id="elapsed">0:00</b></div>
         </div>
       </section>
       <section>
@@ -56,34 +56,31 @@
       </section>
       <section>
         <h2>Best distance per generation</h2>
-        <canvas id="chart" width="320" height="170"></canvas>
+        <canvas id="chart" width="320" height="110"></canvas>
       </section>
     </div>
 
     <div class="pane hidden" id="pane-race">
       <section>
         <h2>Race setup</h2>
-        <label class="row">Laps
-          <select id="laps"><option>1</option><option>2</option><option selected>3</option><option>5</option><option>10</option></select>
-        </label>
+        <div class="two">
+          <label class="row">Laps
+            <select id="laps"><option>1</option><option>2</option><option selected>3</option><option>5</option><option>10</option></select>
+          </label>
+          <label class="row">Speed
+            <select id="raceSpeed"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option></select>
+          </label>
+        </div>
         <label class="row">Brains
           <select id="source"><option value="pre">Pre-trained champions</option><option value="live">Live training</option></select>
         </label>
-        <label class="row">Speed
-          <select id="raceSpeed"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option></select>
-        </label>
         <label class="check"><input type="checkbox" id="drive" checked> Drive yourself (WASD or arrows)</label>
-        <div class="btns"><button id="start" class="primary">Start race</button></div>
+        <div class="btns"><button id="start" class="primary">Start race</button><button id="replayBtn" class="hidden">Replay ghosts</button></div>
         <p class="hint" id="hint">Leaving the track costs 3 seconds, for everyone.</p>
       </section>
       <section>
         <h2 id="boardTitle">Leaderboard</h2>
         <div id="board"></div>
-      </section>
-      <section id="resultsSec" class="hidden">
-        <h2>Best laps (ghost replay)</h2>
-        <div id="results"></div>
-        <div class="btns"><button id="replayBtn">Restart replay</button></div>
       </section>
     </div>
 
@@ -108,7 +105,7 @@
       </section>
       <section>
         <h2>Import / export</h2>
-        <textarea id="json" rows="5" spellcheck="false" placeholder='{"width":90,"ctrl":[{"x":..,"y":..}, ...],"obstacles":[]}'></textarea>
+        <textarea id="json" rows="3" spellcheck="false" placeholder='{"width":90,"ctrl":[{"x":..,"y":..}, ...],"obstacles":[]}'></textarea>
         <div class="btns"><button id="exportJson">Export</button><button id="importJson">Import</button></div>
         <div id="jsonNote" class="hint"></div>
       </section>
