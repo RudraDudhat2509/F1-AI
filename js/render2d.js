@@ -43,6 +43,8 @@
     ctx.stroke();
     ctx.setLineDash([]);
 
+    for (const o of track.obstacles) drawCone(ctx, o.x, o.y);
+
     // start / finish line
     const p = track.pts[0];
     ctx.save();
@@ -179,6 +181,125 @@
     ctx.restore();
   }
 
+  function drawCone(ctx, x, y) {
+    const r = F1.OBSTACLE_R;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath();
+    ctx.arc(x + 2, y + 3, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff7a00';
+    ctx.strokeStyle = '#1d1d22';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff7a00';
+    ctx.beginPath();
+    ctx.arc(x, y, r * 0.25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // The editor view: a cheap road preview (no collision mask), control points, cones, the stroke being drawn.
+  function drawEditor(ctx, ed) {
+    ctx.save(); // text alignment and dashes set below must not leak into other views
+    ctx.fillStyle = '#ebe7e2';
+    ctx.fillRect(0, 0, 1600, 1000);
+    const ok = !ed.reason;
+    if (ed.ctrl.length >= 3) {
+      const sm = F1.smoothClosed(ed.ctrl, 16);
+      ctx.lineJoin = 'round';
+      pathOf(ctx, sm);
+      ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+      ctx.lineWidth = ed.width + 26;
+      ctx.stroke();
+      ctx.strokeStyle = ok ? '#19b4e8' : '#e5484d';
+      ctx.lineWidth = ed.width + 12;
+      ctx.setLineDash([22, 18]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = '#f7f7f7';
+      ctx.lineWidth = ed.width + 6;
+      ctx.stroke();
+      ctx.strokeStyle = ok ? '#8a8a8f' : '#a98a8c';
+      ctx.lineWidth = ed.width;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([26, 26]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // start/finish strip and direction arrows
+      const a = sm[0];
+      const b = sm[1];
+      const h = Math.atan2(b.y - a.y, b.x - a.x);
+      ctx.save();
+      ctx.translate(a.x, a.y);
+      ctx.rotate(h);
+      for (let r = 0; r < 2; r++) {
+        for (let k = 0; k * 9 < ed.width; k++) {
+          ctx.fillStyle = (r + k) % 2 ? '#1d1d22' : '#ffffff';
+          ctx.fillRect(r * 9 - 9, -ed.width / 2 + k * 9, 9, 9);
+        }
+      }
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      for (const f of [0.2, 0.45, 0.7]) {
+        const i = Math.floor(f * sm.length);
+        const p = sm[i];
+        const q = sm[(i + 1) % sm.length];
+        const ang = Math.atan2(q.y - p.y, q.x - p.x);
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(ang);
+        ctx.beginPath();
+        ctx.moveTo(14, 0);
+        ctx.lineTo(-8, -10);
+        ctx.lineTo(-8, 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    for (const o of ed.obstacles) drawCone(ctx, o.x, o.y);
+
+    ed.ctrl.forEach((c, i) => {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, i === ed.hover || (ed.drag && ed.drag.idx === i) ? 12 : 9, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#e10600' : '#ffffff';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = i === 0 ? '#ffffff' : '#e10600';
+      ctx.stroke();
+    });
+
+    if (ed.stroke && ed.stroke.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(ed.stroke[0].x, ed.stroke[0].y);
+      for (const p of ed.stroke) ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = '#e10600';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+    if (!ed.ctrl.length && !ed.stroke) {
+      ctx.fillStyle = 'rgba(29,29,34,0.55)';
+      ctx.font = '700 40px "Segoe UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Drag anywhere to draw a loop', 800, 490);
+      ctx.font = '500 24px "Segoe UI", sans-serif';
+      ctx.fillText('or pick a preset on the right', 800, 530);
+    }
+    ctx.restore();
+  }
+
   // Training clock on the track: generation number, time into the generation, and a progress bar.
   function drawTimer(ctx, gen, t, max) {
     const x = 22;
@@ -254,6 +375,8 @@
     drawLights: drawLights,
     drawGo: drawGo,
     drawTimer: drawTimer,
+    drawCone: drawCone,
+    drawEditor: drawEditor,
     drawChart: drawChart,
   };
 })(globalThis);
