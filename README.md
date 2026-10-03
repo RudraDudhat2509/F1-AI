@@ -11,7 +11,8 @@ Open `index.html` in a browser. There is no build step, no server and no depende
 - **Ghost replay:** after a race, every car's best lap replays at once, color-coded by team.
 - **Track editor:** draw a loop freehand, drag points to reshape it, place cones, import and export tracks as JSON. A live check refuses tracks that cross themselves, run off the map or have corners no car could take.
 - **Tracks:** 10 built in. Four original tracks (one with cones) and six real circuits: Monza, Spa-Francorchamps, Interlagos, Red Bull Ring, Albert Park and Imola.
-- **Toggles:** A* racing line (coloured by planned speed), top 3 badges, car labels, sensor rays.
+- **Leader's racing line:** the current leader's actual path, drawn live and coloured by speed (green flat out, red slow). In training it follows the leading car and shows the previous generation's leader faintly underneath, so you can watch the line improve as the cars learn. In a race it shows the leader's current and previous lap.
+- **Toggles:** leader's racing line, top 3 badges, car labels, sensor rays.
 
 ## The teams
 
@@ -54,6 +55,7 @@ Plain Node scripts, no framework:
 ```
 node tests/headless.js 150    # do all four learners improve under identical training?
 node tests/classical.js       # do the A* and rules drivers complete laps?
+node tests/leaderline.js      # is a re-simulated car path exactly the path the car drove?
 node tests/presets.js         # is every preset valid, and can Atlas plan and lap it?
 node tests/race.js it-1922    # full race with the pre-trained champions on one track
 node tools/pretrain.js be-1925 250 7   # retrain one track and rewrite js/pretrained/be-1925.js
@@ -67,6 +69,7 @@ node tools/pretrain.js be-1925 250 7   # retrain one track and rewrite js/pretra
 - `js/trainers.js` the four learning algorithms
 - `js/drivers.js` A* racing line, pure pursuit, rule driver, player input
 - `js/sim.js` training heats and races
+- `js/leaderline.js` rebuilds the leading car's path so its racing line can be drawn live
 - `js/editor.js` the track editor
 - `js/app.js`, `js/render2d.js`, `index.html`, `css/style.css` the UI
 - `js/pretrained/` champions trained ahead of time, one file per track
