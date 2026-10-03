@@ -52,6 +52,7 @@
       this.finishTick = null;
       this.curTrace = [];
       this.bestTrace = null; // flat [x, y, heading, ...] of the fastest lap, for ghost replay
+      this.lastTrace = null; // the lap before the current one
       this.sensors = new Float32Array(8);
     }
 
@@ -139,6 +140,7 @@
           this.bestLap = lap;
           this.bestTrace = this.curTrace;
         }
+        this.lastTrace = this.curTrace;
         this.curTrace = [];
         this.lapStart = this.tick;
         if (this.laps >= this.targetLaps) {
