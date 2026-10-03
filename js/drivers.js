@@ -99,32 +99,47 @@
       }
     }
 
-    const gScore = new Float64Array(N).fill(Infinity);
-    const came = new Int32Array(N).fill(-1);
+    // Nodes within a safety margin of a cone are not walkable. 22 covers the car's half width (6)
+    // plus the up-to-18 units pure pursuit lags off the line in a tight corner (measured).
+    const blocked = new Uint8Array(N);
+    for (let i = 0; i < N; i++) if (track.nearObstacle(px[i], py[i], 22)) blocked[i] = 1;
+
     const heur = (gt) => 0.9 * (gates - gt) * (n / gates) * track.step;
     const start = mid;
     const goal = gates * K + mid;
-    gScore[start] = 0;
-    const open = new MinHeap();
-    open.push(heur(0), start);
+    let gScore;
+    let came;
     let expanded = 0;
-    while (open.size) {
-      const [, node] = open.pop();
-      expanded++;
-      if (node === goal) break;
-      const gt = Math.floor(node / K);
-      const j = node % K;
-      if (gt >= gates) continue;
-      for (let dj = -2; dj <= 2; dj++) {
-        const j2 = j + dj;
-        if (j2 < 0 || j2 >= K) continue;
-        const nx = (gt + 1) * K + j2;
-        const cost = gScore[node] + Math.hypot(px[nx] - px[node], py[nx] - py[node]) + 0.5 * dj * dj;
-        if (cost < gScore[nx]) {
-          gScore[nx] = cost;
-          came[nx] = node;
-          open.push(cost + heur(gt + 1), nx);
+    let avoided = true; // false if no clean line exists and we had to ignore the cones
+    for (const avoid of [true, false]) {
+      gScore = new Float64Array(N).fill(Infinity);
+      came = new Int32Array(N).fill(-1);
+      gScore[start] = 0;
+      const open = new MinHeap();
+      open.push(heur(0), start);
+      while (open.size) {
+        const [, node] = open.pop();
+        expanded++;
+        if (node === goal) break;
+        const gt = Math.floor(node / K);
+        const j = node % K;
+        if (gt >= gates) continue;
+        for (let dj = -3; dj <= 3; dj++) {
+          const j2 = j + dj;
+          if (j2 < 0 || j2 >= K) continue;
+          const nx = (gt + 1) * K + j2;
+          if (avoid && blocked[nx]) continue;
+          const cost = gScore[node] + Math.hypot(px[nx] - px[node], py[nx] - py[node]) + 0.5 * dj * dj;
+          if (cost < gScore[nx]) {
+            gScore[nx] = cost;
+            came[nx] = node;
+            open.push(cost + heur(gt + 1), nx);
+          }
         }
+      }
+      if (gScore[goal] < Infinity) {
+        avoided = avoid;
+        break;
       }
     }
 
@@ -181,7 +196,7 @@
         speed[i] = Math.min(speed[i], Math.sqrt(nxt * nxt + 2 * decel * track.step));
       }
     }
-    return { line: line, speed: speed, expanded: expanded, gates: gates };
+    return { line: line, speed: speed, expanded: expanded, gates: gates, avoidsCones: avoided };
   }
 
   F1.getPlan = function (track) {
@@ -200,7 +215,7 @@
     think(s, car) {
       const L = this.plan.line;
       const n = L.length;
-      const ld = 35 + 0.3 * car.speed;
+      const ld = 15 + 0.35 * car.speed;
       const t = L[(car.idx + Math.max(2, Math.round(ld / this.step))) % n];
       let e = Math.atan2(t.y - car.y, t.x - car.x) - car.heading;
       while (e > Math.PI) e -= 2 * Math.PI;
