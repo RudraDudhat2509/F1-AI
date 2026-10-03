@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F1 AI</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1><span class="f1">F1</span> <span class="ai">AI</span></h1>
+  <span class="tag">six algorithms, one track, one winner</span>
+  <nav class="tabs">
+    <button class="tab active" data-tab="train">Train</button>
+    <button class="tab" data-tab="race">Race</button>
+  </nav>
+</header>
+<main>
+  <div class="stage">
+    <canvas id="view" width="1600" height="1000"></canvas>
+    <div id="banner"></div>
+  </div>
+  <aside>
+    <div class="pane" id="pane-train">
+      <section>
+        <h2>Generation <b id="gen">0</b></h2>
+        <div class="stats">
+          <div><span>Alive</span><b id="alive">0</b></div>
+          <div><span>Best distance</span><b id="bestDist">0</b></div>
+          <div><span>Best lap</span><b id="bestLap">-</b></div>
+          <div><span>Leading team</span><b id="leader">-</b></div>
+        </div>
+      </section>
+      <section>
+        <h2>Training speed <b id="speedLabel">1x</b></h2>
+        <input id="speed" type="range" min="1" max="60" value="1">
+        <div class="btns">
+          <button id="pause">Pause</button>
+          <button id="reset">Reset</button>
+        </div>
+      </section>
+      <section>
+        <h2>Teams</h2>
+        <div id="teamList"></div>
+      </section>
+      <section>
+        <h2>Best distance per generation</h2>
+        <canvas id="chart" width="320" height="170"></canvas>
+      </section>
+    </div>
+
+    <div class="pane hidden" id="pane-race">
+      <section>
+        <h2>Race setup</h2>
+        <label class="row">Laps
+          <select id="laps"><option>1</option><option>2</option><option selected>3</option><option>5</option><option>10</option></select>
+        </label>
+        <label class="row">Brains
+          <select id="source"><option value="pre">Pre-trained champions</option><option value="live">Live training</option></select>
+        </label>
+        <label class="row">Speed
+          <select id="raceSpeed"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option></select>
+        </label>
+        <label class="check"><input type="checkbox" id="drive" checked> Drive yourself (WASD or arrows)</label>
+        <div class="btns"><button id="start" class="primary">Start race</button></div>
+        <p class="hint" id="hint">Leaving the track costs 3 seconds, for everyone.</p>
+      </section>
+      <section>
+        <h2 id="boardTitle">Leaderboard</h2>
+        <div id="board"></div>
+      </section>
+      <section id="resultsSec" class="hidden">
+        <h2>Best laps (ghost replay)</h2>
+        <div id="results"></div>
+        <div class="btns"><button id="replayBtn">Restart replay</button></div>
+      </section>
+    </div>
+
+    <section>
+      <h2>Show</h2>
+      <label class="check"><input type="checkbox" id="tgLine"> A* racing line (Atlas)</label>
+      <label class="check"><input type="checkbox" id="tgTop3" checked> Top 3 badges</label>
+      <label class="check"><input type="checkbox" id="tgLabels" checked> Car labels</label>
+      <label class="check"><input type="checkbox" id="tgSensors"> Sensor rays</label>
+    </section>
+  </aside>
+</main>
+<script src="js/rng.js"></script>
+<script src="js/track.js"></script>
+<script src="js/nn.js"></script>
+<script src="js/car.js"></script>
+<script src="js/trainers.js"></script>
+<script src="js/drivers.js"></script>
+<script src="js/teams.js"></script>
+<script src="js/sim.js"></script>
+<script src="js/pretrained.js"></script>
+<script src="js/render2d.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
