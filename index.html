@@ -10,9 +10,11 @@
 <header>
   <h1><span class="f1">F1</span> <span class="ai">AI</span></h1>
   <span class="tag">six algorithms, one track, one winner</span>
+  <label class="trackpick">Track <select id="trackSel"></select></label>
   <nav class="tabs">
     <button class="tab active" data-tab="train">Train</button>
     <button class="tab" data-tab="race">Race</button>
+    <button class="tab" data-tab="edit">Track editor</button>
   </nav>
 </header>
 <main>
@@ -78,7 +80,34 @@
       </section>
     </div>
 
-    <section>
+    <div class="pane hidden" id="pane-edit">
+      <section>
+        <h2>Tools</h2>
+        <div class="btns">
+          <button id="toolPath" class="tool active">Draw road</button>
+          <button id="toolCones" class="tool">Place cones</button>
+        </div>
+        <p class="hint" id="toolHint"></p>
+        <label class="row">Road width <b id="widthLabel">90</b></label>
+        <input id="width" type="range" min="56" max="120" value="90">
+        <div class="btns"><button id="loadCurrent">Edit current track</button><button id="clearTrack">Clear</button></div>
+      </section>
+      <section>
+        <h2>Status</h2>
+        <div id="edStatus" class="status"></div>
+        <div id="edNote" class="hint"></div>
+        <div class="btns"><button id="applyTrack" class="primary">Use this track</button></div>
+        <p class="hint">Using a track resets training. Custom tracks have no pre-trained brains, so train first, then race with "Live training".</p>
+      </section>
+      <section>
+        <h2>Import / export</h2>
+        <textarea id="json" rows="5" spellcheck="false" placeholder='{"width":90,"ctrl":[{"x":..,"y":..}, ...],"obstacles":[]}'></textarea>
+        <div class="btns"><button id="exportJson">Export</button><button id="importJson">Import</button></div>
+        <div id="jsonNote" class="hint"></div>
+      </section>
+    </div>
+
+    <section id="showSec">
       <h2>Show</h2>
       <label class="check"><input type="checkbox" id="tgLine"> A* racing line (Atlas)</label>
       <label class="check"><input type="checkbox" id="tgTop3" checked> Top 3 badges</label>
@@ -87,16 +116,31 @@
     </section>
   </aside>
 </main>
+<footer>
+  Real circuit centerlines from <a href="https://github.com/bacinger/f1-circuits">bacinger/f1-circuits</a> (MIT License), scaled and simplified to fit the map.
+</footer>
 <script src="js/rng.js"></script>
 <script src="js/track.js"></script>
+<script src="js/circuits.js"></script>
+<script src="js/presets.js"></script>
 <script src="js/nn.js"></script>
 <script src="js/car.js"></script>
 <script src="js/trainers.js"></script>
 <script src="js/drivers.js"></script>
 <script src="js/teams.js"></script>
 <script src="js/sim.js"></script>
-<script src="js/pretrained.js"></script>
+<script src="js/pretrained/circuit.js"></script>
+<script src="js/pretrained/speedway.js"></script>
+<script src="js/pretrained/serpent.js"></script>
+<script src="js/pretrained/circuit-cones.js"></script>
+<script src="js/pretrained/it-1922.js"></script>
+<script src="js/pretrained/be-1925.js"></script>
+<script src="js/pretrained/br-1940.js"></script>
+<script src="js/pretrained/at-1969.js"></script>
+<script src="js/pretrained/au-1953.js"></script>
+<script src="js/pretrained/it-1953.js"></script>
 <script src="js/render2d.js"></script>
+<script src="js/editor.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

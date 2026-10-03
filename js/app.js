@@ -2,13 +2,13 @@
   const F1 = globalThis.F1;
   const R = F1.render2d;
   const $ = (id) => document.getElementById(id);
-
-  const preset = F1.PRESETS.circuit;
-  const track = F1.buildTrack(preset.ctrl, preset.width, preset.name);
-  const plan = F1.getPlan(track);
-  const pre = F1.PRETRAINED && F1.PRETRAINED[track.name];
-  const trackLayer = R.drawTrackLayer(track);
   const ctx = $('view').getContext('2d');
+
+  let track;
+  let plan;
+  let trackLayer;
+  let pre; // pre-trained champions for the current track, if it is a named preset
+  let currentDef;
 
   let mode = 'train';
   let paused = false;
@@ -19,6 +19,7 @@
   let frameNo = 0;
   let elapsedMs = 0; // wall-clock training time; paused time and other tabs don't count
   let lastTs = performance.now();
+  let editorLoaded = false;
   const keys = { w: false, a: false, s: false, d: false };
 
   const fmt = (ticks) => {
@@ -27,6 +28,43 @@
     return m ? m + ':' + (s % 60).toFixed(2).padStart(5, '0') : s.toFixed(2) + 's';
   };
   const lapText = (v) => (v === Infinity || v == null ? '-' : fmt(v));
+
+  // ------------------------------------------------------------------ choosing a track
+  function buildTrackSelect() {
+    const groups = {};
+    for (const p of F1.PRESET_LIST) (groups[p.group] = groups[p.group] || []).push(p);
+    $('trackSel').innerHTML =
+      Object.keys(groups)
+        .map((g) => '<optgroup label="' + g + '">' + groups[g].map((p) => '<option value="' + p.key + '">' + p.name + '</option>').join('') + '</optgroup>')
+        .join('') + '<option value="custom" hidden>Custom track</option>';
+  }
+
+  // Swap the whole app onto a new track. Returns false (and changes nothing) if the track is unusable.
+  function applyTrack(def, selectKey) {
+    const t = F1.buildTrack(def.ctrl, def.width, def.name, def.obstacles || []);
+    if (t.validate()) return false;
+    track = t;
+    plan = F1.getPlan(t);
+    trackLayer = R.drawTrackLayer(t);
+    currentDef = def;
+    pre = (F1.PRETRAINED && F1.PRETRAINED[def.name]) || null; // an edited track is renamed "Custom", so it never matches
+    race = null;
+    raceOver = false;
+    replay = null;
+    keys.w = keys.a = keys.s = keys.d = false;
+    showBanner('');
+    $('resultsSec').classList.add('hidden');
+    $('boardTitle').textContent = 'Leaderboard';
+    $('source').querySelector('option[value=pre]').disabled = !pre;
+    $('source').value = pre ? 'pre' : 'live';
+    $('hint').textContent = pre ? 'Leaving the track costs 3 seconds, for everyone.' : 'No pre-trained brains for this track. Train first, then race with "Live training".';
+    resetTraining();
+    updateBoard();
+    const custom = def.name === 'Custom';
+    $('trackSel').querySelector('option[value=custom]').hidden = !custom;
+    $('trackSel').value = custom ? 'custom' : selectKey || (F1.PRESET_LIST.find((p) => p.name === def.name) || {}).key;
+    return true;
+  }
 
   // ------------------------------------------------------------------ training tab
   function resetTraining() {
@@ -65,7 +103,7 @@
         const h = training.history[t.id];
         el.textContent = h.best.length ? Math.round(h.best[h.best.length - 1]) + ' | ' + lapText(h.bestLap) : '-';
       } else {
-        el.textContent = t.id === 'astar' ? 'plans: ' + plan.expanded + ' nodes' : 'fixed rules';
+        el.textContent = t.id === 'astar' ? (plan.avoidsCones ? 'plans: ' + plan.expanded + ' nodes' : 'no clean line') : 'fixed rules';
       }
     }
     // Running best: a generation's best can dip (annealing's neighbours may be worse), the record can't.
@@ -114,7 +152,7 @@
       return;
     }
     if (live && training.gen < 1) {
-      $('hint').textContent = 'Live training has no champions yet. Let it run a few generations first.';
+      $('hint').textContent = 'Live training has no champions yet. Open the Train tab and let it run a few generations first.';
       return;
     }
     if (document.activeElement) document.activeElement.blur();
@@ -150,6 +188,7 @@
       .map((c, i) => {
         let info;
         if (c.finished) info = i === 0 ? fmt(c.finishTick) : '+' + ((c.finishTick - winner.finishTick) / 60).toFixed(1) + 's';
+        else if (race.done) info = '+' + (race.laps - c.laps) + (race.laps - c.laps === 1 ? ' lap' : ' laps');
         else info = 'L' + Math.min(race.laps, c.laps + 1) + '/' + race.laps + (c.violations ? ' !' + c.violations : '');
         return '<div class="lb' + (c.meta.isPlayer ? ' me' : '') + '"><span class="pos">' + (i + 1) + '</span>' + dot(c.meta.team) + '<b>' + c.meta.label + '</b><em>' + info + '</em></div>';
       })
@@ -173,6 +212,7 @@
 
   function startReplay() {
     const ghosts = race.cars.filter((c) => c.bestTrace);
+    if (!ghosts.length) return;
     replay = { t: 0, ghosts: ghosts, len: Math.max(...ghosts.map((c) => c.bestTrace.length / 3)) };
   }
 
@@ -225,24 +265,66 @@
     drawRace();
   }
 
+  // ------------------------------------------------------------------ track editor tab
+  const TOOL_HINT = {
+    path: 'Drag on the empty map to draw a loop. Then drag points to reshape it, click the road to add a point, right-click a point to delete it. The red point is the start; arrows show the direction.',
+    cones: 'Click the road to place a cone, click a cone to remove it. Cones block the road: learners sense them and Atlas plans around them. Place them toward one side so cars have room to pass.',
+  };
+
+  function updateEditorUi() {
+    const s = editor.summary();
+    $('edStatus').textContent = s.text;
+    $('edStatus').className = 'status ' + (s.ok ? 'ok' : 'bad');
+    $('applyTrack').disabled = !s.ok;
+    $('edNote').textContent = editor.note || '';
+    $('width').value = editor.width;
+    $('widthLabel').textContent = editor.width;
+  }
+
+  function setTool(tool) {
+    editor.tool = tool;
+    $('toolPath').classList.toggle('active', tool === 'path');
+    $('toolCones').classList.toggle('active', tool === 'cones');
+    $('toolHint').textContent = TOOL_HINT[tool];
+  }
+
+  const editor = F1.createEditor($('view'), updateEditorUi);
+
   // ------------------------------------------------------------------ wiring
   function frame() {
     frameNo++;
     if (mode === 'train') trainFrame();
-    else raceFrame();
+    else if (mode === 'race') raceFrame();
+    else R.drawEditor(ctx, editor);
     requestAnimationFrame(frame);
   }
 
   function setTab(tab) {
     mode = tab;
+    editor.enabled = tab === 'edit';
+    $('view').style.cursor = tab === 'edit' ? 'crosshair' : 'default';
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
     $('pane-train').classList.toggle('hidden', tab !== 'train');
     $('pane-race').classList.toggle('hidden', tab !== 'race');
+    $('pane-edit').classList.toggle('hidden', tab !== 'edit');
+    $('showSec').classList.toggle('hidden', tab === 'edit');
     showBanner(tab === 'race' && race && !raceOver ? 'Race in progress' : '');
     if (tab === 'race' && !race) updateBoard();
+    if (tab === 'edit' && !editorLoaded) {
+      editorLoaded = true;
+      editor.load(currentDef);
+    }
+    lastTs = performance.now();
   }
 
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  $('trackSel').addEventListener('change', () => {
+    const p = F1.presetByKey($('trackSel').value);
+    if (p) {
+      applyTrack(p, p.key);
+      if (editorLoaded) editor.load(p);
+    }
+  });
   $('speed').addEventListener('input', () => ($('speedLabel').textContent = $('speed').value + 'x'));
   $('pause').addEventListener('click', () => {
     paused = !paused;
@@ -252,11 +334,30 @@
   $('start').addEventListener('click', startRace);
   $('replayBtn').addEventListener('click', () => race && startReplay());
 
+  $('toolPath').addEventListener('click', () => setTool('path'));
+  $('toolCones').addEventListener('click', () => setTool('cones'));
+  $('width').addEventListener('input', () => editor.setWidth(Number($('width').value)));
+  $('loadCurrent').addEventListener('click', () => editor.load(currentDef));
+  $('clearTrack').addEventListener('click', () => editor.clear());
+  $('applyTrack').addEventListener('click', () => {
+    const def = editor.definition();
+    if (applyTrack(def)) setTab('train');
+  });
+  $('exportJson').addEventListener('click', () => {
+    $('json').value = editor.toJSON();
+    $('json').select();
+    $('jsonNote').textContent = 'Copy this to save or share the track.';
+  });
+  $('importJson').addEventListener('click', () => {
+    const err = editor.fromJSON($('json').value);
+    $('jsonNote').textContent = err || 'Imported. Check the status, then "Use this track".';
+  });
+
   const keyMap = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', ArrowUp: 'w', ArrowLeft: 'a', ArrowDown: 's', ArrowRight: 'd' };
   window.addEventListener('keydown', (e) => {
     const k = keyMap[e.code];
     if (!k || mode !== 'race' || !race || raceOver) return;
-    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     keys[k] = true;
     e.preventDefault();
   });
@@ -266,11 +367,12 @@
   });
 
   buildTeamList();
-  resetTraining();
-  if (!pre) $('source').value = 'live';
+  buildTrackSelect();
+  applyTrack(F1.presetByKey('circuit'), 'circuit');
+  setTool('path');
   setTab('train');
   requestAnimationFrame(frame);
 
-  // Test hook: lets automated checks drive the app without simulating a real keyboard.
-  globalThis.F1_APP = { startRace: startRace, setTab: setTab, keys: keys, state: () => ({ mode: mode, race: race, raceOver: raceOver, replay: replay }) };
+  // Test hook: lets automated checks drive the app without simulating every input.
+  globalThis.F1_APP = { startRace: startRace, setTab: setTab, applyTrack: applyTrack, editor: editor, keys: keys, state: () => ({ mode: mode, race: race, raceOver: raceOver, replay: replay, track: track, pre: pre }) };
 })();
