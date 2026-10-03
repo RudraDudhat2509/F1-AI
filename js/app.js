@@ -20,6 +20,8 @@
   let elapsedMs = 0; // wall-clock training time; paused time and other tabs don't count
   let lastTs = performance.now();
   let editorLoaded = false;
+  let lineCache = null; // training: the leader's path tracker { id, gen, tracker }
+  let prevPath = null; // the previous generation's leader line, drawn faintly underneath
   const keys = { w: false, a: false, s: false, d: false };
 
   const fmt = (ticks) => {
@@ -69,6 +71,8 @@
   // ------------------------------------------------------------------ training tab
   function resetTraining() {
     training = new F1.Training(track, { size: 40, seed: 7 });
+    lineCache = null;
+    prevPath = null;
     elapsedMs = 0;
     updateTrainHud();
   }
@@ -116,9 +120,25 @@
     );
   }
 
+  // The leader's racing line, live: follow the leading car's exact path as it drives (a new tracker
+  // whenever the lead changes hands), so you watch the line improve as the generations learn. The
+  // previous generation's leader stays faintly underneath to show what changed.
+  function drawLeaderLine() {
+    const lead = F1.leaderOf(training.heat.cars);
+    if (!lead) return;
+    const id = lead.meta.ind.id;
+    if (!lineCache || lineCache.id !== id || lineCache.gen !== training.gen) {
+      if (lineCache && lineCache.gen !== training.gen) prevPath = lineCache.tracker.path;
+      lineCache = { id: id, gen: training.gen, tracker: new F1.PathTracker(track, lead.meta.team, lead.meta.ind.genome) };
+    }
+    lineCache.tracker.advanceTo(training.heat.tick);
+    if (prevPath) R.drawTraceLine(ctx, prevPath, 0.28, 4);
+    R.drawTraceLine(ctx, lineCache.tracker.path, 0.95, 5);
+  }
+
   function drawTrain() {
     ctx.drawImage(trackLayer, 0, 0);
-    if ($('tgLine').checked) R.drawRacingLine(ctx, plan);
+    if ($('tgLine').checked) drawLeaderLine();
     const cars = training.heat.cars;
     let lead = null;
     for (const c of cars) if (c.alive && (!lead || c.dist > lead.dist)) lead = c;
@@ -238,7 +258,6 @@
 
   function drawRace() {
     ctx.drawImage(trackLayer, 0, 0);
-    if ($('tgLine').checked) R.drawRacingLine(ctx, plan);
     if (!race) return;
 
     if (replay) {
@@ -254,6 +273,11 @@
 
     const order = race.standings();
     const me = race.cars.find((c) => c.meta.isPlayer);
+    if ($('tgLine').checked && order[0]) {
+      // the current race leader's recorded lap, with the lap before it faint underneath
+      if (order[0].lastTrace) R.drawTraceLine(ctx, order[0].lastTrace, 0.28, 4);
+      R.drawTraceLine(ctx, order[0].curTrace, 0.95, 5);
+    }
     for (const c of race.cars) if (!c.meta.isPlayer) R.drawCar(ctx, c, c.meta.team.color, false);
     if (me) R.drawCar(ctx, me, me.meta.team.color, true);
     if ($('tgLabels').checked) order.forEach((c, i) => R.drawLabel(ctx, c.x, c.y - (i % 3) * 13, c.meta.label, '#1d1d22'));

@@ -62,20 +62,42 @@
     return c;
   }
 
-  // The A* line, coloured by the speed the planner expects (red = slow corner, green = flat out).
-  function drawRacingLine(ctx, plan) {
-    const L = plan.line;
-    const n = L.length;
-    ctx.lineWidth = 5;
+  // A path drawn in speed colours (red = slow, green = flat out). `trace` is flat [x, y, heading, ...], one
+  // point per tick, so speed comes from how far apart consecutive points are. Segments of similar speed
+  // are stroked together, which keeps a few thousand points cheap to draw every frame.
+  function drawTraceLine(ctx, trace, alpha, width) {
+    const n = trace.length / 3;
+    if (n < 6) return;
+    const BUCKETS = 14;
+    const bucketAt = (i) => {
+      const j = Math.max(0, i - 4);
+      const v = Math.hypot(trace[i * 3] - trace[j * 3], trace[i * 3 + 1] - trace[j * 3 + 1]) * 15; // units per second
+      return Math.max(0, Math.min(BUCKETS - 1, Math.floor(((v - 40) / (P.MAXV - 40)) * BUCKETS)));
+    };
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.lineWidth = width;
     ctx.lineCap = 'round';
-    for (let i = 0; i < n; i += 2) {
-      const f = Math.max(0, Math.min(1, (plan.speed[i] - 40) / (P.MAXV - 40)));
-      ctx.strokeStyle = 'hsla(' + Math.round(f * 125) + ',85%,45%,0.9)';
-      ctx.beginPath();
-      ctx.moveTo(L[i].x, L[i].y);
-      ctx.lineTo(L[(i + 2) % n].x, L[(i + 2) % n].y);
+    ctx.lineJoin = 'round';
+    let cur = bucketAt(0);
+    ctx.beginPath();
+    ctx.moveTo(trace[0], trace[1]);
+    const flush = (i) => {
+      ctx.strokeStyle = 'hsl(' + Math.round((cur / (BUCKETS - 1)) * 125) + ',85%,45%)';
       ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(trace[i * 3], trace[i * 3 + 1]);
+    };
+    for (let i = 2; i < n; i += 2) {
+      const b = bucketAt(i);
+      ctx.lineTo(trace[i * 3], trace[i * 3 + 1]);
+      if (b !== cur) {
+        flush(i);
+        cur = b;
+      }
     }
+    flush(n - 1);
+    ctx.restore();
   }
 
   function carBody(ctx, x, y, heading, color, alpha, outline) {
@@ -310,7 +332,7 @@
 
   F1.render2d = {
     drawTrackLayer: drawTrackLayer,
-    drawRacingLine: drawRacingLine,
+    drawTraceLine: drawTraceLine,
     drawCar: drawCar,
     drawGhost: drawGhost,
     drawLabel: drawLabel,
