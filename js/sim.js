@@ -103,6 +103,7 @@
       this.tick = 0;
       this.countdown = 240; // 4s of start lights
       this.maxTicks = laps * 3600;
+      this.firstFinish = null;
       this.cars = lineup.map((e, k) => {
         const car = new F1.Car(track, e.brain, { team: e.team, label: e.label, isPlayer: !!e.isPlayer }, { mode: 'race', laps: laps, record: true });
         car.placeOnGrid(4 + Math.floor(k / 2) * 9, (k % 2 ? 1 : -1) * 16);
@@ -110,8 +111,12 @@
       });
     }
 
+    // Over when everyone has finished, or a while after the winner: 60s, or 2 minutes if a human is still driving.
     get done() {
-      return this.cars.every((c) => c.finished) || this.tick > this.maxTicks;
+      if (this.cars.every((c) => c.finished) || this.tick > this.maxTicks) return true;
+      if (this.firstFinish === null) return false;
+      const human = this.cars.find((c) => c.meta.isPlayer);
+      return this.tick > this.firstFinish + (human && !human.finished ? 7200 : 3600);
     }
 
     step() {
@@ -119,7 +124,10 @@
         this.countdown--;
         return;
       }
-      for (const c of this.cars) c.step(DT);
+      for (const c of this.cars) {
+        c.step(DT);
+        if (c.finished && this.firstFinish === null) this.firstFinish = this.tick;
+      }
       this.tick++;
     }
 
