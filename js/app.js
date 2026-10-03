@@ -142,6 +142,8 @@
     const cars = training.heat.cars;
     let lead = null;
     for (const c of cars) if (c.alive && (!lead || c.dist > lead.dist)) lead = c;
+    // crashed cars stay where they stopped as faint team-coloured ghosts, under the live ones
+    for (const c of cars) if (!c.alive) R.drawGhost(ctx, c.x, c.y, c.heading, c.meta.team.color, 0.22);
     for (const c of cars) if (c.alive && c !== lead) R.drawCar(ctx, c, c.meta.team.color, false);
     if (lead) {
       R.drawCar(ctx, lead, lead.meta.team.color, true);

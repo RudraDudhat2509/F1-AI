@@ -127,8 +127,8 @@
     carBody(ctx, car.x, car.y, car.heading, color, car.frozen > 0 ? 0.45 : 1, outline);
   }
 
-  function drawGhost(ctx, x, y, heading, color) {
-    carBody(ctx, x, y, heading, color, 0.6, false);
+  function drawGhost(ctx, x, y, heading, color, alpha) {
+    carBody(ctx, x, y, heading, color, alpha == null ? 0.6 : alpha, false);
   }
 
   function drawLabel(ctx, x, y, text, color) {
