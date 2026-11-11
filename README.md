@@ -76,14 +76,14 @@ Course project by:
 
 ### Who owns what
 
-The code is split into four parts, each between about 690 and 810 lines (pre-trained data not counted). Each person owns their files and the tests that go with them.
+Each person owns one of the four learners, plus a part of the rest of the code. The four parts are between about 690 and 840 lines (pre-trained data not counted). The learner classes all live in `js/trainers.js`, so ownership there is by class.
 
-| Person | Part | Files | Lines |
-|---|---|---|---|
-| Rudra Dudhat | Learners and car core: the four learning algorithms, the neural net, car physics and sensors, training heats and races, pre-training | `js/trainers.js`, `js/nn.js`, `js/car.js`, `js/sim.js`, `js/teams.js`, `js/rng.js`, `js/pretrained/`, `tools/pretrain.js`, `tests/headless.js`, `tests/load.js` | about 690 |
-| S Aparajith | Track builder and classical drivers: spline track, validation, A* racing line, pure pursuit, rule driver, leader line tracker, real circuit import | `js/track.js`, `js/drivers.js`, `js/leaderline.js`, `tools/import-circuits.js`, `tests/classical.js`, `tests/leaderline.js` | about 760 |
-| Aryan Kose | App and UI: tabs, controls, HUD, leaderboard, ghost replay, styling | `js/app.js`, `index.html`, `css/style.css` | about 810 |
-| Vatsal Yadav | Rendering, editor and track list: canvas drawing, the track editor, the built-in tracks, preset and race tests | `js/render2d.js`, `js/editor.js`, `js/presets.js`, `js/circuits.js`, `tests/presets.js`, `tests/race.js` | about 730 |
+| Person | Learner | Rest of their part | Files | Lines |
+|---|---|---|---|---|
+| Rudra Dudhat | Vector (Evolution Strategy), `ESTrainer` | Training core: shared trainer base, neural net, car physics and sensors, training heats and races, pre-training, leader line tracker | `js/trainers.js` (`Base`, `ESTrainer`), `js/nn.js`, `js/car.js`, `js/sim.js`, `js/teams.js`, `js/rng.js`, `js/leaderline.js`, `js/pretrained/`, `tools/pretrain.js`, `tests/headless.js`, `tests/race.js`, `tests/leaderline.js`, `tests/load.js` | about 690 |
+| S Aparajith | Ember (Simulated Annealing), `SATrainer` | Track builder and classical drivers: spline track, validation, A* racing line, pure pursuit, the rule driver Ember tunes, real circuit import | `js/trainers.js` (`SATrainer`), `js/track.js`, `js/drivers.js`, `tools/import-circuits.js`, `tests/classical.js`, `tests/presets.js` | about 740 |
+| Aryan Kose | Ascent (Hill Climbing), `HCTrainer` | App and UI: tabs, controls, HUD, leaderboard, ghost replay, styling | `js/trainers.js` (`HCTrainer`), `js/app.js`, `index.html`, `css/style.css` | about 840 |
+| Vatsal Yadav | Helix (Genetic Algorithm), `GATrainer` | Rendering, track editor and the built-in track list | `js/trainers.js` (`GATrainer`), `js/render2d.js`, `js/editor.js`, `js/presets.js`, `js/circuits.js` | about 720 |
 
 The git history was committed from one account, so this table is the record of ownership, not the commit log.
 
