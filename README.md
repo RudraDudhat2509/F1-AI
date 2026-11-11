@@ -76,14 +76,14 @@ Course project by:
 
 ### Who owns what
 
-The code is split into four parts of roughly equal size. Each person owns their files, and the tests that cover them.
+The code is split into four parts, each between about 690 and 810 lines (pre-trained data not counted). Each person owns their files and the tests that go with them.
 
 | Person | Part | Files | Lines |
 |---|---|---|---|
-| Rudra Dudhat | Learning and simulation core: the four learners, the neural net, car physics and sensors, training heats and races, pre-training | `js/trainers.js`, `js/nn.js`, `js/car.js`, `js/sim.js`, `js/teams.js`, `js/rng.js`, `js/pretrained/`, `tools/pretrain.js`, `tests/headless.js`, `tests/race.js`, `tests/load.js` | about 720 |
-| S Aparajith | Tracks and classical drivers: track builder and validation, A* racing line, pure pursuit, rule driver, leader line tracker | `js/track.js`, `js/drivers.js`, `js/leaderline.js`, `tests/classical.js`, `tests/leaderline.js`, `tests/presets.js` | about 640 |
+| Rudra Dudhat | Learners and car core: the four learning algorithms, the neural net, car physics and sensors, training heats and races, pre-training | `js/trainers.js`, `js/nn.js`, `js/car.js`, `js/sim.js`, `js/teams.js`, `js/rng.js`, `js/pretrained/`, `tools/pretrain.js`, `tests/headless.js`, `tests/load.js` | about 690 |
+| S Aparajith | Track builder and classical drivers: spline track, validation, A* racing line, pure pursuit, rule driver, leader line tracker, real circuit import | `js/track.js`, `js/drivers.js`, `js/leaderline.js`, `tools/import-circuits.js`, `tests/classical.js`, `tests/leaderline.js` | about 760 |
 | Aryan Kose | App and UI: tabs, controls, HUD, leaderboard, ghost replay, styling | `js/app.js`, `index.html`, `css/style.css` | about 810 |
-| Vatsal Yadav | Rendering, editor and circuits: canvas drawing, the track editor, the built-in track list, real circuit import | `js/render2d.js`, `js/editor.js`, `js/presets.js`, `js/circuits.js`, `tools/import-circuits.js` | about 820 |
+| Vatsal Yadav | Rendering, editor and track list: canvas drawing, the track editor, the built-in tracks, preset and race tests | `js/render2d.js`, `js/editor.js`, `js/presets.js`, `js/circuits.js`, `tests/presets.js`, `tests/race.js` | about 730 |
 
 The git history was committed from one account, so this table is the record of ownership, not the commit log.
 
