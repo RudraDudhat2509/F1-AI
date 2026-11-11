@@ -27,7 +27,7 @@ All cars share the same physics. Only the brain differs.
 | Atlas | A* + pure pursuit | A* over a graph of track cross-sections finds a racing line (and routes around cones), pure pursuit follows it |
 | Rookie | Reactive rules | Fixed parameters, no learning (baseline) |
 
-The three neural-net teams use the same small network (7 distance sensors plus speed in, steering and throttle out).
+The three neural-net teams use the same small network: 8 inputs (7 distance sensors plus speed), 10 hidden units, 2 outputs (steering and throttle). Ember tunes a rule-based driver instead, and Atlas and Rookie do not learn.
 
 ## Results
 
@@ -52,6 +52,8 @@ Evolution strategy or the genetic algorithm is fastest on 9 of 10 tracks. Hill c
 
 Plain Node scripts, no framework:
 
+`tests/load.js` is a shared helper that loads the browser code into Node. The others are the actual tests:
+
 ```
 node tests/headless.js 150    # do all four learners improve under identical training?
 node tests/classical.js       # do the A* and rules drivers complete laps?
@@ -60,6 +62,30 @@ node tests/presets.js         # is every preset valid, and can Atlas plan and la
 node tests/race.js it-1922    # full race with the pre-trained champions on one track
 node tools/pretrain.js be-1925 250 7   # retrain one track and rewrite js/pretrained/be-1925.js
 ```
+
+## Team
+
+Course project by:
+
+| Name | Roll no. |
+|---|---|
+| Aryan Kose | B24EE09 |
+| Rudra Dudhat | B24DS506 |
+| S Aparajith | B24DS507 |
+| Vatsal Yadav | B24DS036 |
+
+### Who owns what
+
+The code is split into four parts of roughly equal size. Each person owns their files, and the tests that cover them.
+
+| Person | Part | Files | Lines |
+|---|---|---|---|
+| Rudra Dudhat | Learning and simulation core: the four learners, the neural net, car physics and sensors, training heats and races, pre-training | `js/trainers.js`, `js/nn.js`, `js/car.js`, `js/sim.js`, `js/teams.js`, `js/rng.js`, `js/pretrained/`, `tools/pretrain.js`, `tests/headless.js`, `tests/race.js`, `tests/load.js` | about 720 |
+| S Aparajith | Tracks and classical drivers: track builder and validation, A* racing line, pure pursuit, rule driver, leader line tracker | `js/track.js`, `js/drivers.js`, `js/leaderline.js`, `tests/classical.js`, `tests/leaderline.js`, `tests/presets.js` | about 640 |
+| Aryan Kose | App and UI: tabs, controls, HUD, leaderboard, ghost replay, styling | `js/app.js`, `index.html`, `css/style.css` | about 810 |
+| Vatsal Yadav | Rendering, editor and circuits: canvas drawing, the track editor, the built-in track list, real circuit import | `js/render2d.js`, `js/editor.js`, `js/presets.js`, `js/circuits.js`, `tools/import-circuits.js` | about 820 |
+
+The git history was committed from one account, so this table is the record of ownership, not the commit log.
 
 ## Layout
 
@@ -80,4 +106,4 @@ Real circuit centerlines come from [bacinger/f1-circuits](https://github.com/bac
 
 ## Roadmap
 
-Analytics tab with lineage tree, click-to-inspect cars, pit strategy, 3D view.
+Not built yet: multi-seed comparison, analytics tab with lineage tree, click-to-inspect cars, pit strategy, 3D view.
